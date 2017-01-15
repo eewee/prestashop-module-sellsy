@@ -1,5 +1,7 @@
 # PRESTASHOP : module eewee_sellsy
 
+Beta version (don't use in production)
+
 1. Add a support form to the footer (PrestaShop > Sellsy support/ticket).
 2. Add synchronization contact PrestaShop to Sellsy.
 
