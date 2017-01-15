@@ -1,0 +1,5 @@
+v1.3 :
+* add sync PrestaShop to Sellsy (insert / update)
+
+v1.2 :
+* add form ticket support
