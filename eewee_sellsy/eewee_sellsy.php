@@ -33,7 +33,10 @@ use PrestaShop\PrestaShop\Core\Module\WidgetInterface;
 require_once('libs/sellsy/sellsytools.php');
 require_once('libs/sellsy/sellsyconnect_curl.php');
 
-require_once _PS_MODULE_DIR_.'eewee_sellsy/classes/EeweesellsyApiSellsyPeopleModel.php';
+require_once _PS_MODULE_DIR_.'eewee_sellsy/classes/EeweesellsyApiPeopleModel.php';
+require_once _PS_MODULE_DIR_.'eewee_sellsy/classes/EeweesellsyApiStaffsModel.php';
+require_once _PS_MODULE_DIR_.'eewee_sellsy/classes/EeweesellsyApiSmarttagsModel.php';
+require_once _PS_MODULE_DIR_.'eewee_sellsy/classes/EeweesellsyApiSupportModel.php';
 require_once _PS_MODULE_DIR_.'eewee_sellsy/classes/EeweesellsyApiErrorModel.php';
 
 /*
@@ -89,7 +92,7 @@ class Eewee_Sellsy extends Module implements WidgetInterface
         $this->author = 'eewee';
         $this->tab = 'front_office_features';
         $this->need_instance = 0;
-        $this->version = '1.3';
+        $this->version = '1.4';
         $this->ps_versions_compliancy = array('min' => '1.7.0.0', 'max' => _PS_VERSION_);
         $this->bootstrap = true;
         $this->_directory = dirname(__FILE__);
@@ -129,8 +132,11 @@ class Eewee_Sellsy extends Module implements WidgetInterface
 			!Configuration::updateValue('EEWEE_SELLSY_CONSUMER_SECRET', '') ||
 			!Configuration::updateValue('EEWEE_SELLSY_UTILISATEUR_TOKEN', '') ||
 			!Configuration::updateValue('EEWEE_SELLSY_UTILISATEUR_SECRET', '') ||
-			!Configuration::updateValue('EEWEE_SELLSY_SYNC_CONTACT_PRESTASHOP_SELLSY', 1)
-	) {
+			!Configuration::updateValue('EEWEE_SELLSY_SYNC_CONTACT_PRESTASHOP_SELLSY', 1) ||
+			!Configuration::updateValue('EEWEE_SELLSY_SUPPORT_DISPLAY_FORM', 1) ||
+			!Configuration::updateValue('EEWEE_SELLSY_SUPPORT_ASSIGNEDTO', '') ||
+			!Configuration::updateValue('EEWEE_SELLSY_SUPPORT_SUBJECT', '[TICKET SUPPORT] Site internet')
+		) {
     		return false;
     	}
     	return true;
@@ -149,7 +155,10 @@ class Eewee_Sellsy extends Module implements WidgetInterface
 			!Configuration::deleteByName('EEWEE_SELLSY_CONSUMER_SECRET') ||
 			!Configuration::deleteByName('EEWEE_SELLSY_UTILISATEUR_TOKEN') ||
 			!Configuration::deleteByName('EEWEE_SELLSY_UTILISATEUR_SECRET') ||
-			!Configuration::deleteByName('EEWEE_SELLSY_SYNC_CONTACT_PRESTASHOP_SELLSY')
+			!Configuration::deleteByName('EEWEE_SELLSY_SYNC_CONTACT_PRESTASHOP_SELLSY') ||
+			!Configuration::deleteByName('EEWEE_SELLSY_SUPPORT_DISPLAY_FORM') ||
+			!Configuration::deleteByName('EEWEE_SELLSY_SUPPORT_ASSIGNEDTO') ||
+			!Configuration::deleteByName('EEWEE_SELLSY_SUPPORT_SUBJECT')
         ) {
     		return false;
         }
@@ -261,6 +270,20 @@ class Eewee_Sellsy extends Module implements WidgetInterface
 			$output .= $this->displayConfirmation($this->l('Synchro contact PrestaShop to Sellsy executed.'));
 		}
 
+		//--------------------------------------------------------------------------------------------------
+
+		// OPTIONS
+		if (Tools::isSubmit('submit_ticket_support'))
+		{
+			Configuration::updateValue('EEWEE_SELLSY_SUPPORT_DISPLAY_FORM', (int)Tools::getValue('EEWEE_SELLSY_SUPPORT_DISPLAY_FORM'));
+			Configuration::updateValue('EEWEE_SELLSY_SUPPORT_SUBJECT', Tools::getValue('EEWEE_SELLSY_SUPPORT_SUBJECT'));
+			Configuration::updateValue('EEWEE_SELLSY_SUPPORT_ASSIGNEDTO', (int)Tools::getValue('EEWEE_SELLSY_SUPPORT_ASSIGNEDTO'));
+
+			$output .= $this->displayConfirmation($this->l('Saved options.'));
+		}
+
+		//--------------------------------------------------------------------------------------------------
+
 		// Render sync
 		$this->context->smarty->assign(array(
 			'toto' => 'titi'
@@ -294,7 +317,7 @@ class Eewee_Sellsy extends Module implements WidgetInterface
 
 		//--------------------------------------------------------------------------------------------------
 
-    	return $output.$this->displayForm().$this->displayFormSyncPeople();
+    	return $output.$this->displayForm().$this->displayFormSyncPeople().$this->displayFormOption();
     }
 
 	/**
@@ -346,13 +369,13 @@ class Eewee_Sellsy extends Module implements WidgetInterface
 					if ($dataPrestaShopContact['birthday'] != '0000-00-00') {
 						$tbl_people['birthdate'] = strtotime($dataPrestaShopContact['birthday']);
 					}
-					//$tbl_people['tel'] = $dataPrestaShopContact[''];
-					//$tbl_people['fax'] = $dataPrestaShopContact[''];
+					//$tbl_people['tel']	= $dataPrestaShopContact[''];
+					//$tbl_people['fax']	= $dataPrestaShopContact[''];
 					//$tbl_people['mobile'] = $dataPrestaShopContact[''];
-					//$tbl_people['civil'] = $dataPrestaShopContact['id_gender'];
+					//$tbl_people['civil']	= $dataPrestaShopContact['id_gender'];
 
 					// UPDATE
-					$res = EeweesellsyApiSellsyPeopleModel::updateSellsy(array(
+					$res = EeweesellsyApiPeopleModel::updateSellsy(array(
 						'idPeople'	=> $idPeople,
 						'people'	=> $tbl_people,
 					));
@@ -419,7 +442,7 @@ class Eewee_Sellsy extends Module implements WidgetInterface
 					}
 
 					// INSERT
-					$res = EeweesellsyApiSellsyPeopleModel::addSellsy(array(
+					$res = EeweesellsyApiPeopleModel::addSellsy(array(
 						'people' => $tbl_people,
 					));
 
@@ -466,13 +489,13 @@ class Eewee_Sellsy extends Module implements WidgetInterface
 		$tbl_sellsyForPrestashopTotal	= array();
 
 		// PEOPLE : infos
-		$getPeopleInfos = EeweesellsyApiSellsyPeopleModel::getPeopleInfos();
+		$getPeopleInfos = EeweesellsyApiPeopleModel::getPeopleInfos();
 
 		// PEOPLE : for all pages
 		for ($i=1; $i<=$getPeopleInfos->nbpages; $i++) {
-			$response						= EeweesellsyApiSellsyPeopleModel::getPeopleResults(array('pagenum'=>$i));
+			$response						= EeweesellsyApiPeopleModel::getPeopleResults(array('pagenum'=>$i));
 
-			$tbl_sellsyForPrestashop		= EeweesellsyApiSellsyPeopleModel::dataSellsyForMatchWithPrestashop(array('response'=>$response));
+			$tbl_sellsyForPrestashop		= EeweesellsyApiPeopleModel::dataSellsyForMatchWithPrestashop(array('response'=>$response));
 			$tbl_sellsyForPrestashopTotal	= array_merge($tbl_sellsyForPrestashop, $tbl_sellsyForPrestashopTotal);
 
 			// For match
@@ -633,6 +656,7 @@ class Eewee_Sellsy extends Module implements WidgetInterface
 			// displayFooter
 			case "displayFooter" :
 				$templateType = 'footer';
+				$this->context->smarty->assign('EEWEE_SELLSY_DISPLAY_FORM_SUPPORT', Configuration::get('EEWEE_SELLSY_DISPLAY_FORM_SUPPORT'));
 				break;
 
 			// displayFooterAfter
@@ -711,9 +735,9 @@ class Eewee_Sellsy extends Module implements WidgetInterface
 
 		// SAVE
 		if (!$this->error) {
-			$name = pSQL($_POST['f_eewee_sellsy_name']);
-			$email = pSQL($_POST['f_eewee_sellsy_email']);
-			$message = pSQL($_POST['f_eewee_sellsy_message']);
+			$name		= pSQL($_POST['f_eewee_sellsy_name']);
+			$email		= pSQL($_POST['f_eewee_sellsy_email']);
+			$message	= pSQL($_POST['f_eewee_sellsy_message']);
 
 			// API SELLSY : prospect
 			/*
@@ -731,26 +755,28 @@ class Eewee_Sellsy extends Module implements WidgetInterface
 			);
 			*/
 
-			// API SELLSY : support
-			$request = array(
-				'method' => 'Support.create',
-				'params' => array(
-					'ticket'        => array(
-						'subject'       => "[PRESTASHOP] - support",
-						'message'       => "<h2>Client :</h2>".$name."<h2>Message :</h2>".$message,
-						'sender'        => "support@eewee.fr",
-						'step'          => "active",	// default
-						'source'        => "phone",		// default
-						'requesterEmail'=> $email,
-						//'thirdid'       => {{thirdid}},
-						//'thirdcontactid'=> {{thirdcontactid}},
-						//'staffid'       => {{staffid}},
-						//'groupid'       => {{groupid}}
-					)
-				)
-			);
 
-			$response = sellsyConnect_curl::load()->requestApi($request);
+			$subject = '[TICKET SUPPORT] Site internet';
+			if (Configuration::get('EEWEE_SELLSY_SUPPORT_SUBJECT')) {
+				$subject = Configuration::get('EEWEE_SELLSY_SUPPORT_SUBJECT');
+			}
+			$staffId = Configuration::get('EEWEE_SELLSY_SUPPORT_ASSIGNEDTO');
+
+			// API SELLSY : support
+			$response = EeweesellsyApiSupportModel::create(array(
+				'subject'			=> $subject,
+				'message'			=> "<h2>Client :</h2>".$name."<h2>Message :</h2>".$message,
+				'requesterEmail'	=> $email,
+				'staffId'			=> $staffId,
+			));
+			$ticketId = $response->response->ticketid;
+
+			// API SELLSY : tag
+			EeweesellsyApiSmarttagsModel::assign(array(
+				'linkedtype'=> 'ticket',
+				'linkedid'  => $ticketId,
+				'tags'      => 'prestashop'
+			));
 
 			// API : success
 			if ($response->status == 'success') {
@@ -855,6 +881,104 @@ class Eewee_Sellsy extends Module implements WidgetInterface
 		$helper->tpl_vars = array(
 			'fields_value'	=> array(
 				'EEWEE_SELLSY_SYNC_CONTACT_PRESTASHOP_SELLSY' => Tools::getValue('EEWEE_SELLSY_SYNC_CONTACT_PRESTASHOP_SELLSY', Configuration::get('EEWEE_SELLSY_SYNC_CONTACT_PRESTASHOP_SELLSY')),
+			), // Load current value
+			'languages'		=> $this->context->controller->getLanguages(),
+			'id_language'	=> $this->context->language->id
+		);
+
+		return $helper->generateForm($fields_form);
+	}
+
+	/**
+	 * Create form with helperForm : synchronisation people
+	 * @return string
+	 */
+	public function displayFormOption()
+	{
+		// INIT
+		$default_lang = (int)Configuration::get('PS_LANG_DEFAULT');
+		// option (actualy only Yes)
+		$assignedTo = array();
+		foreach (EeweesellsyApiStaffsModel::getStaffInfos() as $kStaff=>$vStaff) {
+			$assignedTo[] = array(
+				'id_option'	=> $kStaff,
+				'name'		=> $vStaff
+			);
+		}
+
+		$fields_form[0]['form'] = array(
+			'legend' => array(
+				'title' => $this->l('Ticket support', 'eewee_sellsy'),
+			),
+			'input' => array(
+				// SWITCH
+				array('type' => 'switch',
+					'label' => $this->l('Display form support', 'eewee_sellsy'),
+					'name' => 'EEWEE_SELLSY_SUPPORT_DISPLAY_FORM',
+					'is_bool' => true,
+					'values' => array(
+						array(
+							'id' => 'active_on',
+							'value' => true,
+							'label' => $this->l('Enabled', 'eewee_sellsy')
+						),
+						array(
+							'id' => 'active_off',
+							'value' => false,
+							'label' => $this->l('Disabled', 'eewee_sellsy'),
+						)
+					),
+				),
+				// SUBJECT
+				array(
+					'type'     => 'text',
+					'label'    => $this->l('Subject', 'eewee_sellsy'),
+					'name'     => 'EEWEE_SELLSY_SUPPORT_SUBJECT',
+					'required' => true,
+				),
+				// SELECT
+				array(
+					'type' => 'select',
+					'lang' => true,
+					'label' => $this->l('Assigned to', 'eewee_sellsy'),
+					'name' => 'EEWEE_SELLSY_SUPPORT_ASSIGNEDTO',
+					'required' => true,
+					'options' => array(
+						'query' => $assignedTo,
+						'id' => 'id_option',
+						'name' => 'name'
+					)
+				),
+			),
+			'submit' => array(
+				'title' => $this->l('Save', 'eewee_sellsy'),
+				'class' => 'btn btn-default pull-right'
+			)
+		);
+
+		$helper = new HelperForm();
+
+		// Module, token and currentIndex
+		$helper->module				= $this;
+		$helper->name_controller	= $this->name;
+		$helper->token				= Tools::getAdminTokenLite('AdminModules');
+		$helper->currentIndex		= AdminController::$currentIndex.'&configure='.$this->name;
+
+		// Language
+		$helper->default_form_language		= $default_lang;
+		$helper->allow_employee_form_lang 	= $default_lang;
+
+		// Title and toolbar
+		$helper->title			= $this->displayName;
+		$helper->show_toolbar	= true; // false -> remove toolbar
+		$helper->toolbar_scroll	= true; // yes - > Toolbar is always visible on the top of the screen.
+		$helper->submit_action	= 'submit_ticket_support';
+
+		$helper->tpl_vars = array(
+			'fields_value'	=> array(
+				'EEWEE_SELLSY_SUPPORT_DISPLAY_FORM' => (int)Configuration::get('EEWEE_SELLSY_SUPPORT_DISPLAY_FORM'),
+				'EEWEE_SELLSY_SUPPORT_SUBJECT'		=> Configuration::get('EEWEE_SELLSY_SUPPORT_SUBJECT'),
+				'EEWEE_SELLSY_SUPPORT_ASSIGNEDTO'	=> (int)Configuration::get('EEWEE_SELLSY_SUPPORT_ASSIGNEDTO'),
 			), // Load current value
 			'languages'		=> $this->context->controller->getLanguages(),
 			'id_language'	=> $this->context->language->id

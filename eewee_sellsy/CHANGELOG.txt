@@ -1,3 +1,6 @@
+v1.4 :
+* update ticket support (subject, assignedTo)
+
 v1.3 :
 * add sync PrestaShop to Sellsy (insert / update)
 

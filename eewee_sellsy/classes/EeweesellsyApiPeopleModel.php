@@ -25,9 +25,9 @@
  */
 
 /**
- * Class EeweesellsyApiSellsyPeopleModel
+ * Class EeweesellsyApiPeopleModel
  */
-class EeweesellsyApiSellsyPeopleModel extends ObjectModel
+class EeweesellsyApiPeopleModel extends ObjectModel
 {
     /**
      * People : infos

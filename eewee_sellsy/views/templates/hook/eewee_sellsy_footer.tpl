@@ -23,27 +23,29 @@
 *  International Registered Trademark & Property of PrestaShop SA
 *}
 
-<div class="eewee_sellsy_form">
-	<h4>{l s='Need help ?' d='Modules.EeweeSellsy.Shop'}</h4>
+{if $EEWEE_SELLSY_DISPLAY_FORM_SUPPORT}
+	<div class="eewee_sellsy_form">
+		<h4>{l s='Need help ?' d='Modules.EeweeSellsy.Shop'}</h4>
 
-	{if $msg}
-		<p class="notification {if $error}notification-error{else}notification-success{/if}">{$msg}</p>
-	{/if}
+		{if $msg}
+			<p class="notification {if $error}notification-error{else}notification-success{/if}">{$msg}</p>
+		{/if}
 
-	<div class="row">
-		<div class="col-md-6 wrapper">
-			<a name="eewee_sellsy_help_form"></a>
-			<form action="{$urls.pages.index}" method="post" {*class="form-inline"*}>
-				<input type="text" class="form-control" name="f_eewee_sellsy_name" value="{$f_eewee_sellsy_name}" placeholder="{l s='Name' d='Modules.EeweeSellsy.Shop'}" />
-				<br>
-				<input type="email" class="form-control" name="f_eewee_sellsy_email" value="{$f_eewee_sellsy_email}" placeholder="{l s='Email' d='Modules.EeweeSellsy.Shop'}" />
-				<br>
-				<textarea class="form-control" name="f_eewee_sellsy_message" placeholder="Message" rows="3">{$f_eewee_sellsy_message}</textarea>
-				<br>
-				<input type="submit" class="btn btn-primary" value="ok" name="submitEeweeSellsy" />
-			</form>
+		<div class="row">
+			<div class="col-md-6 wrapper">
+				<a name="eewee_sellsy_help_form"></a>
+				<form action="{$urls.pages.index}" method="post" {*class="form-inline"*}>
+					<input type="text" class="form-control" name="f_eewee_sellsy_name" value="{$f_eewee_sellsy_name}" placeholder="{l s='Name' d='Modules.EeweeSellsy.Shop'}" />
+					<br>
+					<input type="email" class="form-control" name="f_eewee_sellsy_email" value="{$f_eewee_sellsy_email}" placeholder="{l s='Email' d='Modules.EeweeSellsy.Shop'}" />
+					<br>
+					<textarea class="form-control" name="f_eewee_sellsy_message" placeholder="Message" rows="3">{$f_eewee_sellsy_message}</textarea>
+					<br>
+					<input type="submit" class="btn btn-primary" value="ok" name="submitEeweeSellsy" />
+				</form>
 
+			</div>
 		</div>
-	</div>
 
-</div>
+	</div>
+{/if}
