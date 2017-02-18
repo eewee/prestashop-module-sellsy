@@ -739,23 +739,6 @@ class Eewee_Sellsy extends Module implements WidgetInterface
 			$email		= pSQL($_POST['f_eewee_sellsy_email']);
 			$message	= pSQL($_POST['f_eewee_sellsy_message']);
 
-			// API SELLSY : prospect
-			/*
-			$request = array(
-				'method' => 'Prospects.create',
-				'params' => array(
-					'third' => array(
-						'name'	=> 'nc_prospect_prestashop',
-					),
-					'contact' => array(
-						'name'	=> $name,
-						'email'	=> $email,
-					)
-				)
-			);
-			*/
-
-
 			$subject = '[TICKET SUPPORT] Site internet';
 			if (Configuration::get('EEWEE_SELLSY_SUPPORT_SUBJECT')) {
 				$subject = Configuration::get('EEWEE_SELLSY_SUPPORT_SUBJECT');
@@ -803,7 +786,6 @@ class Eewee_Sellsy extends Module implements WidgetInterface
 			}
 		}
 	}
-
 
 	/**
 	 * Create form with helperForm : synchronisation people
